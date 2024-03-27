@@ -1,6 +1,8 @@
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 const { v4: uuidv4 } = require('uuid');
+const {hashString} = require("../utils/index");
+const Verification = require('../models/emailVerification');
 
 dotenv.config();
 
@@ -17,7 +19,7 @@ let transporter = nodemailer.createTransport({
 
 
 const sendVerificationEmail = async(user, res) => {
-  const {_id, email, lastName} = user;
+  const {_id, email, firstName} = user;
 
   const token = _id + uuidv4();
 
@@ -27,26 +29,41 @@ const sendVerificationEmail = async(user, res) => {
     from: AUTH_EMAIL,
     to: email,
     subject: "Email Verification",
-    html: ``
-    /*
-    write const mailOptions = {
-    from: AUTH_EMAIL,
-    to: email,
-    subject: "Email Verification",
-    html: ``
-  }; html code for email verification sent to the user by nodemailer inside html code there are this vaiables "lastName" and "link" make the html inline style
-     */
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333333;">Hello ${firstName},</h2>
+        <p style="color: #333333;">Thank you for signing up. Please click the link below to verify your email address:</p>
+        <p style="color: #333333;"><a href="${link}" style="background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; display: inline-block; border-radius: 5px;">Verify Email</a></p>
+        <p style="color: #333333;">If you didn't create an account, you can safely ignore this email.</p>
+        <p style="color: #333333;">Best regards,<br>Your Company Name</p>
+      </div>
+    `
   };
+  
 
   try {
-    const hashedToken = await hashPassword(token);
+    const hashedToken = await hashString(token);
 
     const newVerifiedEmail = await Verification.create({
       userId: _id,
       token: hashedToken,
       createdAt: Date.now(),
       expiresAt: Date.now() + 3600000,
-    })
+    });
+
+    if(newVerifiedEmail){
+      transporter
+         .sendMail(mailOptions)
+         .then(()=>{
+          res.status(201).send({
+            success: "pending",
+            message: 
+            "verification email has been sent to your account check your email"
+          });
+          
+         })
+    }
+
    } catch (error) {
     console.log(error);
     res.status(404).json({message: "something went wrong"});

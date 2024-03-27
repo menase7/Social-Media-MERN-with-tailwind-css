@@ -5,7 +5,9 @@ const morgan = require("morgan");
 const bodyparser = require("body-parser");
 
 const helmet = require("helmet");
-const dbConnection = require("./dbConfig")
+const dbConnection = require("./dbConfig");
+const { errorMiddleware } = require("./middleware/errorMiddleware");
+const router = require("./routes/index");
 
 dotenv.config();
 
@@ -20,6 +22,10 @@ app.use(express.json({limit: "10mb"}));
 app.use(express.urlencoded({ extended: true}));
 
 app.use(morgan("dev"));
+
+app.use(router);
+
+app.use(errorMiddleware);
 
 app.listen(PORT, ()=>{
   console.log(`Server runnig on port: ${PORT}`);
