@@ -70,3 +70,6 @@ const verifyEmail = async (req, res) => {
    res.redirect(`/users/verified?message=`);
   }
 };
+
+
+module.exports = verifyEmail;
